@@ -1157,6 +1157,19 @@ function renderSoutaiNoEntries(state, stageKey) {
   `;
   document.querySelector("#ok").onclick = () => goNextWeek(state);
 }
+// ★★ 新規追加: 全国総体に出場できない場合の確認画面
+function renderSoutaiNotQualified(state, stageKey) {
+  app.innerHTML = `
+    <div class="card">
+      <h2>${stageTitleSoutai(stageKey)}</h2>
+      <p style="color:#b00;">出場条件を満たしていないため出場できません。</p>
+      <div class="row" style="margin-top:14px;">
+        <button id="ok">OK（次の週へ）</button>
+      </div>
+    </div>
+  `;
+  document.querySelector("#ok").onclick = () => goNextWeek(state);
+}
 
 function computeScoutMaxByEkiden(state) {
   ensureScout(state);
@@ -1578,12 +1591,19 @@ function openMeetFlow(state, meet) {
     return;
   }
 
-  if (meet.type === "soutai") {
+ if (meet.type === "soutai") {
     const original = state.rivals?.[meet.stage];
     state.rivals[meet.stage] = buildSoutaiRivalsWithCarry(state, meet.stage);
 
     const readOnly = meet.stage !== "district";
     const fixedPicks = readOnly ? buildPlayerFixedSoutaiPicksFromCarry(state, meet.stage) : null;
+
+    // ★★ 新規追加: 全国総体のチェック処理
+    if (meet.stage === "national" && (!fixedPicks || fixedPicks.length === 0)) {
+      state.rivals[meet.stage] = original;
+      renderSoutaiNotQualified(state, meet.stage);
+      return;
+    }
 
     if (readOnly && (!fixedPicks || fixedPicks.length === 0)) {
       state.rivals[meet.stage] = original;
